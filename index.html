@@ -2,40 +2,151 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>ESP32 DHT11 Monitor</title>
+  <title>Giám sát DHT11 ESP32</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
+      font-family: 'Roboto', sans-serif;
+      background: #f5f7fa;
       text-align: center;
-      font-family: Arial, sans-serif;
-      margin-top: 50px;
+      padding: 40px;
     }
-    h1 { color: #333; }
-    .data {
+
+    h1 {
+      color: #2c3e50;
       font-size: 2rem;
-      margin: 20px;
+    }
+
+    .reading {
+      font-size: 1.5rem;
+      margin: 10px 0;
+    }
+
+    #chart-container {
+      width: 90%;
+      max-width: 700px;
+      margin: 30px auto;
+    }
+
+    .update-time {
+      margin-top: 10px;
+      color: #888;
     }
   </style>
 </head>
 <body>
-  <h1>Nhiệt độ & Độ ẩm từ ESP32</h1>
-  <div class="data" id="temp">🌡️ Temp: -- °C</div>
-  <div class="data" id="hum">💧 Humidity: -- %</div>
-  <div>Cập nhật lúc: <span id="time">--:--:--</span></div>
+  <h1>📡 Nhiệt độ & Độ ẩm từ ESP32</h1>
+  <div class="reading" id="temp">🌡️ Temp: -- °C</div>
+  <div class="reading" id="hum">💧 Humidity: -- %</div>
+  <div class="update-time">Cập nhật lúc: <span id="time">--:--:--</span></div>
+
+  <div id="chart-container">
+    <canvas id="myChart"></canvas>
+  </div>
 
   <script>
-    async function fetchData() {
+    const tempDiv = document.getElementById('temp');
+    const humDiv = document.getElementById('hum');
+    const timeDiv = document.getElementById('time');
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    let myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Nhiệt độ (°C)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            data: [],
+            yAxisID: 'y'
+          },
+          {
+            label: 'Độ ẩm (%)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            data: [],
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        stacked: false,
+        plugins: {
+          legend: {
+            position: 'top'
+          },
+          title: {
+            display: true,
+            text: 'Lịch sử Nhiệt độ và Độ ẩm'
+          }
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Nhiệt độ (°C)'
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Độ ẩm (%)'
+            },
+            grid: {
+              drawOnChartArea: false
+            }
+          }
+        }
+      }
+    });
+
+    async function updateData() {
       try {
         const res = await fetch('/status');
         const data = await res.json();
-        document.getElementById('temp').innerText = `🌡️ Temp: ${data.temp} °C`;
-        document.getElementById('hum').innerText = `💧 Humidity: ${data.hum} %`;
-        document.getElementById('time').innerText = data.time;
+        tempDiv.textContent = `🌡️ Temp: ${data.temp} °C`;
+        humDiv.textContent = `💧 Humidity: ${data.hum} %`;
+        timeDiv.textContent = data.time;
       } catch (err) {
-        console.error('Lỗi khi lấy dữ liệu:', err);
+        console.error('Không lấy được dữ liệu:', err);
       }
     }
-    setInterval(fetchData, 3000);
-    fetchData();
+
+    async function updateChart() {
+      try {
+        const res = await fetch('/history');
+        const data = await res.json();
+
+        myChart.data.labels = data.map(d => d.time);
+        myChart.data.datasets[0].data = data.map(d => d.temp);
+        myChart.data.datasets[1].data = data.map(d => d.hum);
+        myChart.update();
+      } catch (err) {
+        console.error('Không lấy được dữ liệu biểu đồ:', err);
+      }
+    }
+
+    setInterval(() => {
+      updateData();
+      updateChart();
+    }, 5000);
+
+    updateData();
+    updateChart();
   </script>
 </body>
 </html>
