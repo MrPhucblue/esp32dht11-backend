@@ -12,8 +12,8 @@ const char* ssid = "Hoang Phuc Sau";
 const char* password = "";
 
 // URL của backend Render
-const char* serverName = "https://esp32dht11-backend.onrender.com/update";  // Cập nhật theo backend của bạn
-
+//const char* serverName = "https://esp32dht11-backend.onrender.com/update";  // Cập nhật theo backend của bạn
+const char* serverName = "https://esp32dht11-backend.onrender.com/update";
 void setup() {
   Serial.begin(115200);
   dht.begin();
