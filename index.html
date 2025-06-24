@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>ESP32 DHT11 Monitor</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      margin-top: 50px;
+    }
+    h1 { color: #333; }
+    .data {
+      font-size: 2rem;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Nhiệt độ & Độ ẩm từ ESP32</h1>
+  <div class="data" id="temp">🌡️ Temp: -- °C</div>
+  <div class="data" id="hum">💧 Humidity: -- %</div>
+  <div>Cập nhật lúc: <span id="time">--:--:--</span></div>
+
+  <script>
+    async function fetchData() {
+      try {
+        const res = await fetch('/status');
+        const data = await res.json();
+        document.getElementById('temp').innerText = `🌡️ Temp: ${data.temp} °C`;
+        document.getElementById('hum').innerText = `💧 Humidity: ${data.hum} %`;
+        document.getElementById('time').innerText = data.time;
+      } catch (err) {
+        console.error('Lỗi khi lấy dữ liệu:', err);
+      }
+    }
+    setInterval(fetchData, 3000);
+    fetchData();
+  </script>
+</body>
+</html>
